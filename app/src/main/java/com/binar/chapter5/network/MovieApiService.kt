@@ -1,6 +1,7 @@
 package com.binar.chapter5.network
 
 import com.binar.chapter5.model.MovieModel
+import com.binar.chapter5.model.movie_detail.MovieDetail
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
@@ -19,6 +20,8 @@ private val retrofit = Retrofit.Builder()
 interface MovieApiService{
     @GET("3/movie/634649/recommendations?api_key=$API_KEY&language=en-US&page=1")
     fun allMovies(): Call<MovieModel>
+    @GET("3/movie/68726?api_key=$API_KEY&append_to_response=videos")
+    fun getDetail(): Call<MovieDetail>
 }
 object MovieApi{
     private val logging : HttpLoggingInterceptor

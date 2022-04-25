@@ -71,24 +71,30 @@ class MainFragment : Fragment() {
             }
         }.start()
     }
+
     private fun setupSecondObserver() {
-        Log.d("Tag","Fragment activity : datanya ->")
-        secondViewModel.getMovies().observe(requireActivity()){
-            binding.progressBar.visibility = View.VISIBLE
-            Log.d("Tag","Fragment activity : datanya -> $it")
+        Log.d("Tag", "Fragment activity : datanya ->")
+        secondViewModel.getMovies().observe(requireActivity()) {
+            if (it == null) {
+                binding.progressBar.visibility = View.VISIBLE
+            } else {
+                binding.progressBar.visibility = View.INVISIBLE
+            }
+            Log.d("Tag", "Fragment activity : datanya -> $it")
             val adapter = MainAdapter(it)
-            val layoutManager = LinearLayoutManager(requireContext(),
-                LinearLayoutManager.VERTICAL,false)
+            val layoutManager =
+                LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
             binding.rvMain.layoutManager = layoutManager
             binding.rvMain.adapter = adapter
         }
     }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        binding = FragmentMainBinding.inflate(inflater,container,false)
+        binding = FragmentMainBinding.inflate(inflater, container, false)
         return binding.root
     }
 
