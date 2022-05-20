@@ -7,9 +7,12 @@ import androidx.room.RoomDatabase
 import com.binar.chapter5.database.dao.user_dao
 import com.binar.chapter5.database.modelDB.User
 
-@Database(entities = [User::class], version = 1)
+
+@Database(entities = [User::class], version = 4)
 abstract class UserDatabase : RoomDatabase() {
+
     abstract fun UserDao(): user_dao
+
 
     companion object {
         private var INSTANCE: UserDatabase? = null
@@ -21,7 +24,8 @@ abstract class UserDatabase : RoomDatabase() {
                         context.applicationContext,
                         UserDatabase::class.java,
                         "User.db*"
-                    ).build()
+                    ).fallbackToDestructiveMigration()
+                        .build()
                 }
             }
             return INSTANCE

@@ -2,91 +2,104 @@ package com.binar.chapter5.fragment
 
 import android.content.Context
 import android.content.SharedPreferences
+
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.binar.chapter5.R
 import com.binar.chapter5.adapter.MainAdapter
 import com.binar.chapter5.database.createDB.UserDatabase
-import com.binar.chapter5.databinding.FragmentLoginBinding
 import com.binar.chapter5.databinding.FragmentMainBinding
 import com.binar.chapter5.view_model.SecondViewModel
+
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 
 
 class MainFragment : Fragment() {
 
-
+    private lateinit var binding : FragmentMainBinding
     private val sharedPref = "sharedpreferences"
-    private val secondViewModel: SecondViewModel by viewModels()
-    lateinit var binding: FragmentMainBinding
-    lateinit var username: String
-    private val mId = MutableLiveData<Int>()
-
-
-    private var user_db: UserDatabase? = null
-
+    private val movieViewModel : SecondViewModel by viewModels()
+    private var user_db : UserDatabase? = null
+    lateinit var userManager : com.binar.chapter5.data_store.UserManager
+    lateinit var images : String
+    lateinit var username : String
+    var isLoggedIn : Boolean = false
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        val sharedPreferences : SharedPreferences = requireActivity().getSharedPreferences(sharedPref, Context.MODE_PRIVATE)
         user_db = UserDatabase.getInstance(requireContext())
-        mId.postValue(68726)
+        userManager = com.binar.chapter5.data_store.UserManager(requireContext())
+        images = sharedPreferences.getString("images","null").toString()
+        getPhoto()
 
-        val sharedPreferences: SharedPreferences =
-            requireActivity().getSharedPreferences(sharedPref, Context.MODE_PRIVATE)
-        val editor: SharedPreferences.Editor = sharedPreferences.edit()
 
-        username = sharedPreferences.getString("username", "null").toString()
-        binding.tvUsername.setText("Welcome, $username")
-        setupSecondObserver()
-        getIdUsername()
-        binding.ivProfile.setOnClickListener {
-            findNavController().navigate(MainFragmentDirections.actionMainFragmentToProfileFragment())
+        binding.apply {
+            binding.ivProfile.setOnClickListener {
+                findNavController().navigate(MainFragmentDirections.actionMainFragmentToProfileFragment())
+            }
+
+
         }
 
-    }
-
-    private fun getIdUsername() {
-        val sharedPreferences: SharedPreferences =
-            requireActivity().getSharedPreferences(sharedPref, Context.MODE_PRIVATE)
-        val editor: SharedPreferences.Editor = sharedPreferences.edit()
-        Thread {
-            var result = user_db?.UserDao()?.getId(username)
-            activity?.runOnUiThread {
-                if (result != null) {
-                    var id = result
-
-                    editor.putInt("id", id)
-                    editor.apply()
-                    Log.d("ID", id.toString())
-                } else {
-                    Log.d("ID", "Null Id")
-                }
-            }
-        }.start()
-    }
-
-    private fun setupSecondObserver() {
-        Log.d("Tag", "Fragment activity : datanya ->")
-        secondViewModel.getMovies().observe(requireActivity()) {
-            if (it == null) {
+        movieViewModel.getMovies().observe(requireActivity()){
+            if(it==null){
                 binding.progressBar.visibility = View.VISIBLE
-            } else {
+            }else{
                 binding.progressBar.visibility = View.INVISIBLE
             }
-            Log.d("Tag", "Fragment activity : datanya -> $it")
+            Log.d("Tag","Fragment activity : datanya -> $it")
             val adapter = MainAdapter(it)
-            val layoutManager =
-                LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+            val layoutManager = GridLayoutManager(requireContext(),2)
             binding.rvMain.layoutManager = layoutManager
             binding.rvMain.adapter = adapter
         }
+    }
+
+    private fun observeData() {
+
+
+    }
+
+    private fun getPhoto() {
+        userManager.userNameFlow.asLiveData().observe(requireActivity(),{
+            username = it
+            binding.tvUsername.setText("Welcome, $username")
+
+            Thread{
+                val result = user_db?.UserDao()?.getPhotoProfile(it)
+                activity?.runOnUiThread {
+                    if(result!=null) {
+                        Glide.with(requireActivity())
+                            .load(result)
+                            .apply(RequestOptions.centerCropTransform())
+                            .error(R.drawable.ic_baseline_profile_24)
+                            .into(binding.ivProfile)
+                        images = result
+                    }
+                    else{
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to load image",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }.start()
+        })
+        userManager.isLoggedInFlow.asLiveData().observe(requireActivity(),{
+            isLoggedIn = it
+        })
+
     }
 
     override fun onCreateView(
@@ -94,12 +107,7 @@ class MainFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        binding = FragmentMainBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+        binding = FragmentMainBinding.inflate(inflater,container,false)
+        return binding.root }
 
 }
-
-
-
-
